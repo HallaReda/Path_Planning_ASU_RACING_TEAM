@@ -12,7 +12,7 @@ class PathPlanning:
     where color is 0 for yellow (right side) and 1 for blue (left side). The goal is to
     generate a sequence of path points that the car should follow.
     """
-    
+
     def __init__(self, car_pose: CarPose, cones: List[Cone]):
         self.car_pose = car_pose
         self.cones = cones
@@ -140,9 +140,12 @@ class PathPlanning:
                 # Two or more cones on one side: fit a line through them.
                 line_center, direction = fit_line(visible_side)
 
-                # Make the line point the same general way the car is facing.
-                car_direction = (math.cos(self.car_pose.yaw), math.sin(self.car_pose.yaw))
-                if (direction[0] * car_direction[0] + direction[1] * car_direction[1]) < 0:
+                # Point the line so the car ends up on the INSIDE of the track:
+                # blue (left boundary) must have the car on its right,
+                # yellow (right boundary) must have the car on its left.
+                side = (direction[0] * (start[1] - line_center[1])
+                        - direction[1] * (start[0] - line_center[0]))
+                if (is_blue and side > 0) or ((not is_blue) and side < 0):
                     direction = (-direction[0], -direction[1])
 
                 # Blue -> shift right, yellow -> shift left (toward the track middle).
